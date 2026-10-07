@@ -1,0 +1,17 @@
+
+python -m venv venv
+.\venv\Scripts\activate.bat
+
+pip install pandas
+pip install nsetools
+pip install yfinance 
+pip install sqlalchemy
+pip install mftool
+pip install pymysql
+pip install httpx
+pip install BeautifulSoup
+pip install requests
+
+pip install selenium
+
+pip install selenium webdriver-manager

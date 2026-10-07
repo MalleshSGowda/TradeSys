@@ -1,0 +1,33 @@
+from datetime import datetime, timedelta
+import util.util as ut
+import util.util_nse as ut_nse
+
+# this url is available upto sept 09-2024
+
+var_engine = ut.get_engine("localhost", "src_db", "root", "root")
+
+ut.truncate_table("nse_stock_bhav_copy_equities_legancy", var_engine)
+
+end_date = datetime(2024, 9, 9)
+start_date = end_date - timedelta(days=3)
+
+current_date = end_date
+
+while current_date >= start_date:
+
+    try:
+        dfa = ut_nse.get_nse_stock_bhav_copy_equities_legancy(current_date)
+
+        if not dfa.empty:
+
+            ut_nse.write_to_mysql(
+                dfa, "nse_stock_bhav_copy_equities_legancy", var_engine, "append"
+            )
+            print(current_date)
+            current_date -= timedelta(days=1)
+        else:
+            print(f"No data for {current_date}")
+            current_date -= timedelta(days=1)
+    except Exception as e:
+        print(f"Error processing date {current_date}: {e}")
+        current_date -= timedelta(days=1)

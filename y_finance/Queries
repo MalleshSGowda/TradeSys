@@ -1,0 +1,8 @@
+
+select count(1) from yfinance_stock_history;
+select count(1) from yfinance_company_financial;
+select count(1) from yfinance_stock_recommendations;
+select count(1) from yfinance_stock_recommendations_summary;
+select count(1) from yfinance_stock_balance_sheet;
+select count(1) from yfinance_stock_major_holders;
+select count(1) from yfinance_stock_institutional_holders;

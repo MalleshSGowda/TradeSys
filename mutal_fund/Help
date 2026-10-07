@@ -1,0 +1,89 @@
+select * from src_db.stg_mutual_fund_list; 
+select * from src_db.mutual_fund_nav_history; 
+select * from src_db.stg_mutual_fund_nav_present;
+
+drop PROCEDURE ProcessDataWithCursor;
+
+call ProcessDataWithCursor();
+
+DELIMITER $$
+
+CREATE PROCEDURE ProcessDataWithCursor()
+BEGIN
+    
+    DECLARE done INT DEFAULT 0;
+    DECLARE code_id INT;
+	     
+    DECLARE mf_list_cursor CURSOR FOR select distinct scheme_code from stg_trading_system.stg_mutual_fund_nav_history  order by 1 ;  
+	
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1; 
+    OPEN mf_list_cursor; 
+	
+    mf_loop: LOOP
+        FETCH mf_list_cursor INTO code_id;
+        
+        IF done THEN
+            LEAVE mf_loop;  -- Exit the outer loop if no more categories are found
+        END IF;
+        
+		INSERT INTO stg_trading_system.stg_mutual_fund_nav_history_final
+    (date_nav, nav, scheme_code, fund_house, scheme_type, scheme_category, scheme_name, min, max, Start_date, last_date)
+SELECT DISTINCT
+    date AS date_nav,
+    nav,
+    scheme_code,
+    fund_house,
+    scheme_type,
+    scheme_category,
+    scheme_name,
+    min,
+    max,
+    Start_date,
+    last_date
+FROM stg_trading_system.stg_mutual_fund_nav_history
+WHERE scheme_code = code_id;    
+
+commit;
+    END LOOP;  
+    CLOSE mf_list_cursor;
+
+END$$
+
+DELIMITER ;
+
+-------------
+
+
+drop PROCEDURE proc_step1_src_stg;
+
+call proc_step1_src_stg();
+
+DELIMITER $$
+
+CREATE PROCEDURE proc_step1_src_stg()
+BEGIN
+    
+    DECLARE done INT DEFAULT 0;
+    DECLARE code_id INT;
+	     
+insert ignore stg_trading_system.stg_mutual_fund_list(amc, scheme_code, scheme_name, scheme_type, scheme_category, scheme_nav_name, scheme_minimum_amount, launch_date, closure_date, isin_div_payout_isin_growth_isin_div_reinvestment)
+SELECT AMC, Code, `Scheme Name`, `Scheme Type`, `Scheme Category`, `Scheme NAV Name`, `Scheme Minimum Amount`, `Launch Date`,` Closure Date`, `ISIN Div Payout/ ISIN GrowthISIN Div Reinvestment` 
+FROM src_db.mutual_fund_list;     
+     
+commit;
+truncate stg_trading_system.stg_mutual_fund_nav_present;
+
+insert ignore stg_trading_system.stg_mutual_fund_nav_present(scheme_code, isin_div_payout_isin_growth, isin_div_reinvestment, scheme_name, net_asset_value, date_nav)
+SELECT `Scheme Code`, `ISIN Div Payout/ ISIN Growth`, `ISIN Div Reinvestment`, `Scheme Name`, `Net Asset Value`, `Date`  
+FROM src_db.mutual_fund_nav_present; 
+
+ commit;
+ insert ignore stg_trading_system.stg_mutual_fund_nav_history(date_nav, nav, scheme_code, fund_house, scheme_type, scheme_category, scheme_name, min_nav, max_nav, Start_date, last_date)
+SELECT t2.date_nav,t2.net_asset_value,t2.scheme_code,t1.amc,t1.scheme_type,t1.scheme_category,t2.scheme_name,'','','',t2.date_nav
+ FROM stg_trading_system.stg_mutual_fund_list t1 join stg_mutual_fund_nav_present t2 
+on t1.scheme_code=t2.scheme_code;
+   
+
+END$$
+
+DELIMITER ;
