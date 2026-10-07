@@ -1,0 +1,9 @@
+pandas
+nsetools
+yfinance
+sqlalchemy
+mftool
+pymysql
+httpx
+beautifulsoup4
+requests
